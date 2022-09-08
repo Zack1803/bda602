@@ -7,11 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-iris = datasets.load_iris()
-# X = iris.data[:, :2]  # we only take the first two features.
-# y = iris.target
-# print(X)
-# print(y)
+# iris = pd.read_fwf('iris.data')
+
 
 # a simple function to compute summary of data.
 
@@ -109,6 +106,7 @@ def modelling(x_val, y_val):
     print(pipeline.score(X_test, y_test))
 
 
+iris = datasets.load_iris()
 df = pd.DataFrame(iris.data, columns=iris.feature_names)
 df["target"] = pd.Series(iris.target)
 print(df.head(5))
