@@ -1,13 +1,18 @@
-
+use baseball;
 # Question 1
-create temporary table q1 as(
-select DISTINCT a.batter,extract (year from g.local_date) as year ,(a.Hit/a.atBat)*100 as batting_average
+
+#drop table before creating a new
+
+drop table yearly_average;
+
+#create a new table
+
+create table yearly_average
+select DISTINCT a.batter,extract (year from g.local_date) as year ,(sum(a.Hit)/NULLIF(sum(a.atBat),0))*100 as batting_average
 from
 batter_counts as A
 JOIN game g on A.game_id = g.game_id
-group by a.batter, year);
-
-select * from q1;
+group by a.batter, year;
 
 
 
@@ -49,33 +54,27 @@ group by  batter;
 
 
 
-SELECT a.batter, b.local_date, (A.hit/A.atBat)
-FROM batter_counts as A
-LEFT JOIN GAME as B
-ON A.game_id = B.game_id
-WHERE B.local_date >= DATE_SUB((select local_date from game), interval 100 day);
-
-
- 
 
 #Q3
 
 #Step 1 - Create a temp table with all required columns
 
-WITH temp1 as
-(
+#drop table before creation
+
+create or replace temporary table rolling_average_intermediate as
 SELECT a.batter, b.local_date, A.hit,A.atBat
 FROM batter_counts as A
 LEFT JOIN GAME as B
-ON A.game_id = B.game_id)
+ON A.game_id = B.game_id ;
 
 
 #Step 2 - Use the Temp Table to create self join and find rolling average
-
-select a.batter, a.local_date, (sum(a.hit)/sum(a.atBat)) as rolling_avg, count(*) as cnt
-from temp1 as a
-join temp1 as b
+#Hint 2 - for one batter - commented for submission
+create or replace table rolling_average
+select a.batter, a.local_date, (sum(a.Hit)/NULLIF(sum(a.atBat),0))*100 as rolling_avg
+from rolling_average_intermediate as a
+join rolling_average_intermediate as b
 on a.batter = b.batter and a.local_date > b.local_date and b.local_date between a.local_date - INTERVAL 100 DAY and a.local_date
-where a.batter = 451088
+#where a.batter = 451088
 group by a.batter,a.local_date
 order by a.local_date DESC;
