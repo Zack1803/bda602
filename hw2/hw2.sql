@@ -67,7 +67,7 @@ group by  batter;
 
 
 
-#Q3
+#Q3 - Probably Correct
 
 #Step 1 - Create a temp table with all required columns
 
