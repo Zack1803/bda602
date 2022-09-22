@@ -1,13 +1,13 @@
 use baseball;
-# Question 1
+# Question 1 -  Annual
 
 #drop table before creating a new
 
-drop table yearly_average;
+drop table annual_average;
 
 #create a new table
 
-create table yearly_average
+create table annual_average
 select DISTINCT a.batter,extract (year from g.local_date) as year ,(sum(a.Hit)/NULLIF(sum(a.atBat),0))*100 as batting_average
 from
 batter_counts as A
@@ -16,10 +16,22 @@ group by a.batter, year;
 
 
 
+#Question 2 - Historical
 
-#Question 2
+drop table historical_average;
 
-#Q2 - v1
+#create a new table
+
+create table historical_average
+select DISTINCT a.batter,(sum(a.Hit)/NULLIF(sum(a.atBat),0))*100 as batting_average
+from
+batter_counts as A
+JOIN game g on A.game_id = g.game_id
+group by a.batter;
+
+#Question 3
+
+#Q3 - v1
 WITH batters as
     (
 select  g.local_date ,a.batter, a.Hit,a.atBat
@@ -35,7 +47,7 @@ select date(local_date) as Date,
 from batters;
 
 
-#Q2 - v2
+#Q3 - v2
 
 WITH batter as
 (select  cast(g.local_date as date) as date ,a.batter, a.Hit,a.atBat
