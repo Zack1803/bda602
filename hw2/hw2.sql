@@ -52,6 +52,6 @@ select a.batter, a.local_date, (sum(b.Hit)/NULLIF(sum(b.atBat),0))*100 as rollin
 from rolling_average_intermediate as a
 join rolling_average_intermediate as b
 on a.batter = b.batter and a.local_date > b.local_date and b.local_date between  a.local_date - INTERVAL 100 DAY and a.local_date
-where a.batter = 110029
+#where a.batter = 110029
 group by a.batter,a.local_date
 order by a.local_date DESC;
