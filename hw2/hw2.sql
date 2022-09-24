@@ -1,13 +1,9 @@
 use baseball;
 # Question 1 -  Annual
 
-#drop table before creating a new
-
-drop table annual_average;
-
 #create a new table
 
-create table annual_average
+create or replace table annual_average
 select DISTINCT a.batter,extract (year from g.local_date) as year ,(sum(a.Hit)/NULLIF(sum(a.atBat),0))*100 as batting_average
 from
 batter_counts as A
@@ -18,11 +14,10 @@ group by a.batter, year;
 
 #Question 2 - Historical
 
-drop table historical_average;
 
 #create a new table
 
-create table historical_average
+create or replace table historical_average
 select DISTINCT a.batter,(sum(a.Hit)/NULLIF(sum(a.atBat),0))*100 as batting_average
 from
 batter_counts as A
