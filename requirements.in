@@ -3,3 +3,5 @@ pandas
 plotly
 scipy
 sklearn
+pyspark
+pyspark-stubs
