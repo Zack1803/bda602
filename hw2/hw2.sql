@@ -33,11 +33,16 @@ group by a.batter;
 #drop table before creation
 
 create or replace table rolling_average
-with rolling_average_intermediate as
+
+create temporary table rolling_average_intermediate
 (SELECT a.batter, b.local_date, A.hit,A.atBat
 FROM batter_counts as A
 LEFT JOIN GAME as B
-ON A.game_id = B.game_id)
+ON A.game_id = B.game_id);
+CREATE UNIQUE INDEX batter ON rolling_average_intermediate(batter);
+CREATE UNIQUE INDEX date ON rolling_average_intermediate(local_date);
+CREATE UNIQUE INDEX batter_date ON rolling_average_intermediate(batter,local_date);
+
 
 
 #Step 2 - Use the Temp Table to create self join and find rolling average
