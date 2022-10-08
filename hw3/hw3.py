@@ -1,100 +1,112 @@
-import os
 import sys
+from pyspark import StorageLevel
+from pyspark import keyword_only
+from pyspark.sql import SparkSession
+from pyspark.ml import Transformer
 
-import pyspark
-from pyspark import SparkConf, StorageLevel
-from pyspark.sql import SparkSession, SQLContext
+
+# Create a spark session
+spark = SparkSession.builder \
+    .config("spark.jars",
+            "/Users/zack/Documents/SDSU/Fall 2022/BDA 602/src/bda602/hw3/mysql-connector-java-5.1.46/mysql-connector-java-5.1.46.jar") \
+    .master("local") \
+    .appName("HW3").getOrCreate()
+
+# Define Transformer Class
+
+class RollingAverageTransform(Transformer):
+
+    @keyword_only
+    def __init__(self):
+        super(RollingAverageTransform, self).__init__()
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
+        return
+
+    @keyword_only
+    def setParams(self):
+        kwargs = self._input_kwargs
+        return self._set(**kwargs)
+
+    def _transform(data):
+        rolling_avg = rolling_average_calculation(spark, data)
+        return rolling_avg
+
+# Create a function to load the data from MariaDB
+def load_data(query):
+
+    table_data = spark.read.format("jdbc") \
+        .option("url", "jdbc:mysql://localhost:3306/baseball") \
+        .option("driver", "com.mysql.jdbc.Driver") \
+        .option("query", query) \
+        .option("user", "root") \
+        .option("password", "believe") \
+        .load()
+    return table_data
 
 
-def set_conf():
-    # Creating a configuration file for my Spark object
-    # Need spark.jars setting for connection to mariadb
+# Intermediate Calculation
 
-    conf = SparkConf().setAppName("App")
-    conf = conf.setMaster("local[*]").set(
-        "spark.jars",
-        "/Users/zack/Documents/SDSU/Fall 2022/BDA 602/src/bda602/hw3/mysql-connector-java-5.1.46/mysql-connector-java-5.1.46.jar",
-    )
+def intermediate_data():
+    game_sql = """
+        SELECT                               
+        game_id,
+        local_date
+        FROM game
+              """
 
-    return conf
+    battercounts_sql = """
+         SELECT 
+         game_id,
+         batter,
+         atbat,
+         hit
+         FROM batter_counts
+             """
+
+    game = load_data(game_sql)  # getting the game table data
+    batter_counts = load_data(battercounts_sql)  # Loading the batter_counts data
+
+    intermediate_df = batter_counts.join(game, on="game_id")  # joining the tables
+
+    return intermediate_df
+
+
+# Function to calculate rolling average
+
+def rolling_average_calculation(spark, data):
+    rolling_average_sql = """
+    SELECT 
+    a.batter,
+    a.local_date,
+    (sum(b.Hit)/NULLIF(sum(b.atBat),0)) as rolling_avg
+    FROM rolling_average_intermediate as a
+    JOIN rolling_average_intermediate as b
+    ON a.batter = b.batter 
+    AND a.local_date > b.local_date
+    AND b.local_date BETWEEN a.local_date - INTERVAL 100 DAY and a.local_date
+    group by a.batter,a.local_date
+    order by a.local_date DESC
+                                """
+
+    data.createOrReplaceTempView("rolling_average_intermediate")
+    data.persist(StorageLevel.DISK_ONLY)
+    rolling_average_intermediate = spark.sql(rolling_average_sql)
+
+    return rolling_average_intermediate
 
 
 def main():
 
-    # Making Spark Object
-    sc = pyspark.SparkContext.getOrCreate(conf=set_conf())
-    sqlContext = SQLContext(sc)
-    spark = SparkSession.builder.master("local[*]").getOrCreate()
+    # Loading the game and batter counts data
+    intermediate_df = intermediate_data()
+    # Create an object of transformer class
+    obj = RollingAverageTransform
+    # Passing the data to transformer
+    result = obj._transform(intermediate_df)
 
-    # Making connection to MariaDB
-    mysql_db_driver_class = "com.mysql.jdbc.Driver"
-    host_name = "localhost"
-    port_no = "3306"
-    user_name = "root"
-    password = "believe"
-    database_name = "baseball?zeroDateTimeBehavior=convertToNull"
-
-
-    # Making JDBC URL
-    mysql_jdbc_url = "jdbc:mysql://" + host_name + ":" + port_no + "/" + database_name
-
-    # Reading DataTable from jdbc
-    game_df = (
-        sqlContext.read.format("jdbc")
-        .option("url", mysql_jdbc_url)
-        .option("driver", mysql_db_driver_class)
-        .option("dbtable", "game")
-        .option("user", user_name)
-        .option("password", password)
-        .load()
-    )
-
-    batter_counts_df = (
-        sqlContext.read.format("jdbc")
-        .option("url", mysql_jdbc_url)
-        .option("driver", mysql_db_driver_class)
-        .option("dbtable", "batter_counts")
-        .option("user", user_name)
-        .option("password", password)
-        .load()
-    )
-
-    # game_df.show()
-    # batter_counts_df.show()
-    game_df.createOrReplaceTempView("game")
-    game_df.persist(StorageLevel.DISK_ONLY)
-    batter_counts_df.createOrReplaceTempView("batter_counts")
-    batter_counts_df.persist(StorageLevel.DISK_ONLY)
-
-    # Simple SQL
-    intermediate_table_df = spark.sql(
-        """
-    SELECT 
-     BC.batter,
-     G.local_date, 
-     BC.hit,
-     BC.atBat
-    FROM batter_counts BC
-    JOIN game G
-    ON BC.game_id = G.game_id
-        """
-    )
-    # intermediate_table.show()
-    intermediate_table_df.createOrReplaceTempView("rolling_average_intermediate")
-    intermediate_table_df.persist(StorageLevel.DISK_ONLY)
-
-    rolling_average = spark.sql(
-        """
-    select a.batter, a.local_date, (sum(b.Hit)/NULLIF(sum(b.atBat),0)) as rolling_avg
-    from rolling_average_intermediate as a
-    join rolling_average_intermediate as b
-    on a.batter = b.batter and a.local_date > b.local_date and b.local_date between  a.local_date - INTERVAL 100 DAY and a.local_date
-    group by a.batter,a.local_date
-    order by a.local_date DESC
-        """
-    )
-    rolling_average.show()
-    return
+    # Displaying the first 10 rows of the result
+    result.show()
 
 
 if __name__ == "__main__":
