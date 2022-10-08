@@ -1,21 +1,26 @@
-import sys
-from pyspark import StorageLevel
-from pyspark import keyword_only
-from pyspark.sql import SparkSession
-from pyspark.ml import Transformer
+# pre commit hooks
 
+import sys
+
+from pyspark import StorageLevel, keyword_only
+from pyspark.ml import Transformer
+from pyspark.sql import SparkSession
 
 # Create a spark session
-spark = SparkSession.builder \
-    .config("spark.jars",
-            "/Users/zack/Documents/SDSU/Fall 2022/BDA 602/src/bda602/hw3/mysql-connector-java-5.1.46/mysql-connector-java-5.1.46.jar") \
-    .master("local") \
-    .appName("HW3").getOrCreate()
+spark = (
+    SparkSession.builder.config(
+        "spark.jars",
+        "/Users/zack/Documents/SDSU/Fall 2022/mysql-connector-java-5.1.46/mysql-connector-java-5.1.46.jar",
+    )
+    .master("local")
+    .appName("HW3")
+    .getOrCreate()
+)
 
 # Define Transformer Class
 
-class RollingAverageTransform(Transformer):
 
+class RollingAverageTransform(Transformer):
     @keyword_only
     def __init__(self):
         super(RollingAverageTransform, self).__init__()
@@ -32,37 +37,37 @@ class RollingAverageTransform(Transformer):
         rolling_avg = rolling_average_calculation(spark, data)
         return rolling_avg
 
+
 # Create a function to load the data from MariaDB
 def load_data(query):
 
-    table_data = spark.read.format("jdbc") \
-        .option("url", "jdbc:mysql://localhost:3306/baseball") \
-        .option("driver", "com.mysql.jdbc.Driver") \
-        .option("query", query) \
-        .option("user", "root") \
-        .option("password", "believe") \
+    table_data = (
+        spark.read.format("jdbc")
+        .option("url", "jdbc:mysql://localhost:3306/baseball")
+        .option("driver", "com.mysql.jdbc.Driver")
+        .option("query", query)
+        .option("user", "root")
+        .option("password", "believe")
         .load()
+    )
     return table_data
 
 
 # Intermediate Calculation
 
-def intermediate_data():
-    game_sql = """
-        SELECT                               
-        game_id,
-        local_date
-        FROM game
-              """
 
-    battercounts_sql = """
-         SELECT 
-         game_id,
-         batter,
-         atbat,
-         hit
-         FROM batter_counts
-             """
+def intermediate_data():
+    game_sql = """ \
+        SELECT game_id, \
+        local_date \
+        FROM game"""
+
+    battercounts_sql = """ \
+        SELECT game_id, \
+        batter,\
+        atbat,\
+        hit \
+        FROM batter_counts"""
 
     game = load_data(game_sql)  # getting the game table data
     batter_counts = load_data(battercounts_sql)  # Loading the batter_counts data
@@ -74,20 +79,19 @@ def intermediate_data():
 
 # Function to calculate rolling average
 
+
 def rolling_average_calculation(spark, data):
-    rolling_average_sql = """
-    SELECT 
-    a.batter,
-    a.local_date,
-    (sum(b.Hit)/NULLIF(sum(b.atBat),0)) as rolling_avg
-    FROM rolling_average_intermediate as a
-    JOIN rolling_average_intermediate as b
-    ON a.batter = b.batter 
-    AND a.local_date > b.local_date
-    AND b.local_date BETWEEN a.local_date - INTERVAL 100 DAY and a.local_date
-    group by a.batter,a.local_date
-    order by a.local_date DESC
-                                """
+    rolling_average_sql = """ \
+    SELECT a.batter, \
+    a.local_date, \
+    (sum(b.Hit)/NULLIF(sum(b.atBat),0)) as rolling_avg \
+    FROM rolling_average_intermediate as a \
+    JOIN rolling_average_intermediate as b \
+    ON a.batter = b.batter \
+    AND a.local_date > b.local_date \
+    AND b.local_date BETWEEN a.local_date - INTERVAL 100 DAY and a.local_date \
+    group by a.batter,a.local_date \
+    order by a.local_date DESC """
 
     data.createOrReplaceTempView("rolling_average_intermediate")
     data.persist(StorageLevel.DISK_ONLY)
