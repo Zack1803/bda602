@@ -5,3 +5,4 @@ scipy
 sklearn
 pyspark
 pyspark-stubs
+findspark
