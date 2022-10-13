@@ -1,40 +1,27 @@
+# Continuous or Boolean
+# Loop through each predictor
+# Determine if the predictor is cat/cont
+# Automatically generate the necessary plot(s) to inspect it
+# Calculate the different ranking algos
+# p-value & t-score (continuous predictors only) along with it's plot
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import statsmodelsgit .api as sm
-from plotly import figure_factory as ff
-from plotly import graph_objects as go
-from scipy import stats
-from sklearn import datasets, linear_model
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import confusion_matrix
-
-# Diabetes
-
-
-# diabetes = datasets.load_diabetes(as_frame=True)
-# df = diabetes['frame']
-# predictors = ['age','sex','bmi','bp','s1','s2','s3','s4','s5','s6']
-# response = ['target']
-
-# Iris
-df = pd.read_csv("iris.csv")
-df.head()
-predictors = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"]
-response = ["Species"]
-
-import sys
-
 import statsmodels.api
 from plotly import express as px
+from plotly import figure_factory as ff
+from plotly import graph_objects as go
 from sklearn import datasets
 
 
-def lr(df):
-    X = df.iloc[::-1]
-    y = df.iloc[:-1]
+def lr(df, predictors, response):
+    X = df.iloc[:, :-1].values
+    y = df.iloc[:, -1].values
+
     for idx, column in enumerate(X.T):
-        feature_name = diabetes.feature_names[idx]
+        feature_name = predictors[idx]
         predictor = statsmodels.api.add_constant(column)
         linear_regression_model = statsmodels.api.OLS(y, predictor)
         linear_regression_model_fitted = linear_regression_model.fit()
@@ -56,75 +43,59 @@ def lr(df):
     return
 
 
-if __name__ == "__main__":
-    """
-    diabetes = datasets.load_diabetes(as_frame=True)
-    df = diabetes['frame']
-    predictors = ['age','sex','bmi','bp','s1','s2','s3','s4','s5','s6']
-    response = ['target']
-    X = diabetes.data.values
-    y = diabetes.target.values
-    """
-    # iris = datasets.load_iris(as_frame=True)
-    # df = iris['frame']
-    # predictors = ['sepal length (cm)', 'sepal width (cm)', 'petal length (cm)','petal width (cm)']
-    # response = ['target']
-    # variable_type(df,predictors,response)
-    # lr(X,y)
+def random_forest():
+    import time
 
+    import numpy as np
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.inspection import permutation_importance
+    from sklearn.model_selection import train_test_split
 
-from sklearn.ensemble import RandomForestClassifier
+    # diabetes = datasets.load_diabetes(as_frame=True)
+    # df = diabetes['frame']
+    X = df.iloc[:, :-1]
+    y = df.iloc[:, -1]
 
-# diabetes = datasets.load_diabetes(as_frame=True)
-# df = diabetes['frame']
-X = df.iloc[:, :-1]
-y = df.iloc[:, -1]
-from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42
+    )
+    forest = RandomForestClassifier(random_state=0)
+    forest.fit(X_train, y_train)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42
-)
-forest = RandomForestClassifier(random_state=0)
-forest.fit(X_train, y_train)
-import time
+    start_time = time.time()
+    importances = forest.feature_importances_
+    std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
+    elapsed_time = time.time() - start_time
+    print(f"Elapsed time to compute the importances: {elapsed_time:.3f} seconds")
+    forest_importances_impurity = pd.Series(importances, index=df.iloc[:, :-1].columns)
 
-import numpy as np
+    fig, ax = plt.subplots()
+    forest_importances_impurity.plot.bar(yerr=std, ax=ax)
+    ax.set_title("Feature importances using MDI")
+    ax.set_ylabel("Mean decrease in impurity")
+    fig.tight_layout()
 
-start_time = time.time()
-importances = forest.feature_importances_
-std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
-elapsed_time = time.time() - start_time
-print(f"Elapsed time to compute the importances: {elapsed_time:.3f} seconds")
-forest_importances_impurity = pd.Series(importances, index=df.columns[0:5])
+    start_time = time.time()
+    result = permutation_importance(
+        forest, X_test, y_test, n_repeats=10, random_state=42, n_jobs=2
+    )
+    elapsed_time = time.time() - start_time
+    print(f"Elapsed time to compute the importances: {elapsed_time:.3f} seconds")
 
-fig, ax = plt.subplots()
-forest_importances_impurity.plot.bar(yerr=std, ax=ax)
-ax.set_title("Feature importances using MDI")
-ax.set_ylabel("Mean decrease in impurity")
-fig.tight_layout()
-from sklearn.inspection import permutation_importance
-
-start_time = time.time()
-result = permutation_importance(
-    forest, X_test, y_test, n_repeats=10, random_state=42, n_jobs=2
-)
-elapsed_time = time.time() - start_time
-print(f"Elapsed time to compute the importances: {elapsed_time:.3f} seconds")
-
-forest_importances_permutation = pd.Series(
-    result.importances_mean, index=df.columns[0:5]
-)
-fig, ax = plt.subplots()
-forest_importances_permutation.plot.bar(yerr=result.importances_std, ax=ax)
-ax.set_title("Feature importances using permutation on full model")
-ax.set_ylabel("Mean accuracy decrease")
-fig.tight_layout()
-plt.show()
-print(
-    forest_importances_permutation.to_frame()
-    .rename(columns={0: "Feature Importance"})
-    .sort_values("Feature Importance", ascending=False)
-)
+    forest_importances_permutation = pd.Series(
+        result.importances_mean, index=df.iloc[:, :-1].columns
+    )
+    fig, ax = plt.subplots()
+    forest_importances_permutation.plot.bar(yerr=result.importances_std, ax=ax)
+    ax.set_title("Feature importances using permutation on full model")
+    ax.set_ylabel("Mean accuracy decrease")
+    fig.tight_layout()
+    plt.show()
+    print(
+        forest_importances_permutation.to_frame()
+        .rename(columns={0: "Feature Importance"})
+        .sort_values("Feature Importance", ascending=False)
+    )
 
 
 def check_response(df, response):
@@ -175,7 +146,7 @@ def cat_resp_cont_predictor(df, i, response, predictors, group_labels):
     for curr_hist, curr_group in zip(hist_data, group_labels):
         fig_2.add_trace(
             go.Violin(
-                x=np.repeat(curr_group, n),
+                x=np.repeat(curr_group, 200),
                 y=curr_hist,
                 name=curr_group,
                 box_visible=True,
@@ -192,19 +163,29 @@ def cat_resp_cont_predictor(df, i, response, predictors, group_labels):
     return
 
 
-result_response = check_response(df, response)
+if __name__ == "__main__":
+    diabetes = datasets.load_diabetes(as_frame=True)
+    df = diabetes["frame"]
+    predictors = ["age", "sex", "bmi", "bp", "s1", "s2", "s3", "s4", "s5", "s6"]
+    response = ["target"]
 
-print(result_response)
-for i in range(0, len(df.columns) - 1):
-    # result_response = check_response(df,i,response)
-    result_predictor = check_predictor(df, i, predictors)
-    if result_response == "CAT_RES":
-        if result_predictor == "CAT_PRED":
-            print("cat_res_cat_pred()")
+    # variable_type(df,predictors,response)
+    lr(df, predictors, response)
+    random_forest()
+    result_response = check_response(df, response)
+
+    print(result_response)
+    for i in range(0, len(df.columns) - 1):
+        # result_response = check_response(df,i,response)
+        result_predictor = check_predictor(df, i, predictors)
+        if result_response == "CAT_RES":
+            if result_predictor == "CAT_PRED":
+                print("cat_res_cat_pred()")
+            else:
+                print("Hi")
+        #               cat_resp_cont_predictor(df, i, response, predictors, group_labels)
         else:
-            cat_resp_cont_predictor(df, i, response, predictors, group_labels)
-    else:
-        if result_predictor == "CAT_PRED":
-            print("cont_res_cat_pred()")
-        else:
-            cont_response_cont_predictor(df, i, response, predictors)
+            if result_predictor == "CAT_PRED":
+                print("cont_res_cat_pred()")
+            else:
+                cont_response_cont_predictor(df, i, response, predictors)
