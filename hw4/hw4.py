@@ -1,28 +1,27 @@
-import pandas as pd
-import numpy as np
-from sklearn import datasets, linear_model
-from sklearn.linear_model import LinearRegression
-import statsmodels.api as sm
-from scipy import stats
 import matplotlib.pyplot as plt
-from plotly import figure_factory as ff
+import numpy as np
+import pandas as pd
+import statsmodelsgit .api as sm
 from plotly import figure_factory as ff
 from plotly import graph_objects as go
+from scipy import stats
+from sklearn import datasets, linear_model
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import confusion_matrix
 
-#Diabetes
+# Diabetes
 
 
-#diabetes = datasets.load_diabetes(as_frame=True)
-#df = diabetes['frame']
-#predictors = ['age','sex','bmi','bp','s1','s2','s3','s4','s5','s6']
-#response = ['target']
+# diabetes = datasets.load_diabetes(as_frame=True)
+# df = diabetes['frame']
+# predictors = ['age','sex','bmi','bp','s1','s2','s3','s4','s5','s6']
+# response = ['target']
 
-#Iris
-df = pd.read_csv('iris.csv')
+# Iris
+df = pd.read_csv("iris.csv")
 df.head()
-predictors = ['Id', 'SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']
-response = ['Species']
+predictors = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"]
+response = ["Species"]
 
 import sys
 
@@ -58,14 +57,14 @@ def lr(df):
 
 
 if __name__ == "__main__":
-    '''
+    """
     diabetes = datasets.load_diabetes(as_frame=True)
     df = diabetes['frame']
     predictors = ['age','sex','bmi','bp','s1','s2','s3','s4','s5','s6']
     response = ['target']
     X = diabetes.data.values
     y = diabetes.target.values
-    '''
+    """
     # iris = datasets.load_iris(as_frame=True)
     # df = iris['frame']
     # predictors = ['sepal length (cm)', 'sepal width (cm)', 'petal length (cm)','petal width (cm)']
@@ -75,16 +74,22 @@ if __name__ == "__main__":
 
 
 from sklearn.ensemble import RandomForestClassifier
-#diabetes = datasets.load_diabetes(as_frame=True)
-#df = diabetes['frame']
+
+# diabetes = datasets.load_diabetes(as_frame=True)
+# df = diabetes['frame']
 X = df.iloc[:, :-1]
-y = df.iloc[:,-1]
+y = df.iloc[:, -1]
 from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42
+)
 forest = RandomForestClassifier(random_state=0)
 forest.fit(X_train, y_train)
 import time
+
 import numpy as np
+
 start_time = time.time()
 importances = forest.feature_importances_
 std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
@@ -106,29 +111,35 @@ result = permutation_importance(
 elapsed_time = time.time() - start_time
 print(f"Elapsed time to compute the importances: {elapsed_time:.3f} seconds")
 
-forest_importances_permutation = pd.Series(result.importances_mean, index=df.columns[0:5])
+forest_importances_permutation = pd.Series(
+    result.importances_mean, index=df.columns[0:5]
+)
 fig, ax = plt.subplots()
 forest_importances_permutation.plot.bar(yerr=result.importances_std, ax=ax)
 ax.set_title("Feature importances using permutation on full model")
 ax.set_ylabel("Mean accuracy decrease")
 fig.tight_layout()
 plt.show()
-print(forest_importances_permutation.to_frame().rename(columns = {0:'Feature Importance'}).sort_values('Feature Importance',ascending=False))
+print(
+    forest_importances_permutation.to_frame()
+    .rename(columns={0: "Feature Importance"})
+    .sort_values("Feature Importance", ascending=False)
+)
 
 
 def check_response(df, response):
     # print('Resposne Variable:')
-    if df[response].dtypes[0] == 'O':
-        return ('CAT_RES')
+    if df[response].dtypes[0] == "O":
+        return "CAT_RES"
     else:
-        return ('CONT_RES')
+        return "CONT_RES"
 
 
 def check_predictor(df, i, predictors):
-    if df[predictors].dtypes[i] == 'O':
-        return ('CAT_PRED')
+    if df[predictors].dtypes[i] == "O":
+        return "CAT_PRED"
     else:
-        return ('CONT_PRED')
+        return "CONT_PRED"
 
 
 def cont_response_cont_predictor(df, i, response, predictors):
@@ -189,11 +200,11 @@ for i in range(0, len(df.columns) - 1):
     result_predictor = check_predictor(df, i, predictors)
     if result_response == "CAT_RES":
         if result_predictor == "CAT_PRED":
-            print('cat_res_cat_pred()')
+            print("cat_res_cat_pred()")
         else:
             cat_resp_cont_predictor(df, i, response, predictors, group_labels)
     else:
         if result_predictor == "CAT_PRED":
-            print('cont_res_cat_pred()')
+            print("cont_res_cat_pred()")
         else:
             cont_response_cont_predictor(df, i, response, predictors)
