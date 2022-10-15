@@ -9,67 +9,69 @@
 # cat_response_cat_predictor - Heart
 # cont_response_cat_predictor -
 
-import sys
-
-import matplotlib.pyplot as plt
-import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.inspection import permutation_importance
+from sklearn.model_selection import train_test_split
+import time
 import pandas as pd
-import statsmodels.api
-from plotly import express as px
+import numpy as np
+import matplotlib.pyplot as plt
 from plotly import figure_factory as ff
 from plotly import graph_objects as go
 from sklearn.metrics import confusion_matrix
+import statsmodels.api
+from plotly import express as px
 
 
 def check_response(df, response):
     if df[response[0]].nunique() == 2:
         if df[response].dtypes[0] == "int64":
-            df[response] = df[response].astype("object")
-            print(df[response].columns[0], "- Categorical Response")
-            return "CAT_RES"
+            df[response] = df[response].astype('object')
+            print(df[response].columns[0], '- Categorical Response')
+            return ('CAT_RES')
         else:
-            print(df[response].columns[0], "- Categorical Response")
-            return "CAT_RES"
+            print(df[response].columns[0], '- Categorical Response')
+            return ('CAT_RES')
     elif df[response[0]].nunique() > 2:
         if df[response].dtypes[0] == "O":
-            print(df[response].columns[0], "- Categorical Response")
-            return "CAT_RES"
+            print(df[response].columns[0], '- Categorical Response')
+            return ('CAT_RES')
         else:
-            print(df[response].columns[0], "- Continuous Response")
-            return "CONT_RES"
+            print(df[response].columns[0], '- Continuous Response')
+            return ('CONT_RES')
 
 
-"""
+'''
 def check_predictor(df,i,predictors):
     if df[predictors].dtypes[i] == "O" or len(df[response[0]].unique()) ==2:
         return('CAT_PRED')
     else:
         return('CONT_PRED')
 
-"""
+'''
 
 
 def check_predictor(df, i, predictors):
     if df[predictors[i]].nunique() == 2:
         if df[predictors[i]].dtypes == "int64":
-            print(df[predictors].columns[i], "- Categorical Response saved as numeric")
-            df[predictors[i]] = df[predictors[i]].astype("object")
-            print(df[predictors].columns[i], "- Categorical Response")
-            return "CAT_PRED"
+            print(df[predictors].columns[i], '- Categorical Response saved as numeric')
+            df[predictors[i]] = df[predictors[i]].astype('object')
+            print(df[predictors].columns[i], '- Categorical Response')
+            return ('CAT_PRED')
         else:
-            print(df[predictors].columns[i], "- Categorical Response")
-            return "CAT_PRED"
+            print(df[predictors].columns[i], '- Categorical Response')
+            return ('CAT_PRED')
     elif df[predictors[i]].nunique() > 2:
         if df[predictors[i]].dtypes == "O":
-            print(df[predictors].columns[i], "- Categorical Response")
-            return "CAT_PRED"
+            print(df[predictors].columns[i], '- Categorical Response')
+            return ('CAT_PRED')
         else:
             # print(df[predictors].columns[i],'- Continuous Response')
-            return "CONT_PRED"
+            return ('CONT_PRED')
 
 
 def cont_response_cont_predictor(df, i, response, predictors, table):
-    print("Called: cont_response_cont_predictor")
+    print('Called: cont_response_cont_predictor')
     x = df[df.columns[i]]
     # print(x.values)
     y = df[df.columns[-1]]
@@ -90,15 +92,13 @@ def cont_response_cont_predictor(df, i, response, predictors, table):
         yaxis_title="Response",
     )
     fig.show()
-    table.append(
-        [df.columns[i], "Continuous Predictor", "Continuous Response", t_value, p_value]
-    )
+    table.append([df.columns[i], 'Continuous Predictor', 'Continuous Response', t_value, p_value])
     # print(table)
     return
 
 
 def cat_response_cont_predictor(df, i, response, predictors, table):
-    print("Called: cat_response_cont_predictor")
+    print('Called: cat_response_cont_predictor')
     # print(df[response])
     group_labels = df.iloc[:, -1].unique()
     # Group data together
@@ -134,8 +134,8 @@ def cat_response_cont_predictor(df, i, response, predictors, table):
     fig_2.show()
 
     x = df.iloc[:, i]
-    y = df.iloc[:, -1].astype("category").cat.codes
-    y = y.astype("int64")
+    y = df.iloc[:, -1].astype('category').cat.codes
+    y = y.astype('int64')
 
     predictor = statsmodels.api.add_constant(df.iloc[:, i].T.values)
     log_regression_model = statsmodels.api.Logit(y, predictor)
@@ -146,23 +146,15 @@ def cat_response_cont_predictor(df, i, response, predictors, table):
     t_value = round(log_regression_model_fitted.tvalues[1], 6)
     p_value = "{:.6e}".format(log_regression_model_fitted.pvalues[1])
 
-    table.append(
-        [
-            df.columns[i],
-            "Continuous Predictor",
-            "Categorical Response",
-            t_value,
-            p_value,
-        ]
-    )
+    table.append([df.columns[i], 'Continuous Predictor', 'Categorical Response', t_value, p_value])
 
     return
 
 
 def cat_response_cat_predictor(df, i, response, predictors, table):
-    print("Called: cat_response_cat_predictor")
+    print('Called: cat_response_cat_predictor')
     n = len(df)
-    df[response] = df[response].astype("int64")
+    df[response] = df[response].astype('int64')
     x = df.iloc[:, i]
     y = df.iloc[:, -1]
 
@@ -205,47 +197,24 @@ def cat_response_cat_predictor(df, i, response, predictors, table):
     t_value = round(log_regression_model_fitted.tvalues[1], 6)
     p_value = "{:.6e}".format(log_regression_model_fitted.pvalues[1])
 
-    table.append(
-        [
-            df.columns[i],
-            "Categorical Predictor",
-            "Categorical Response",
-            t_value,
-            p_value,
-        ]
-    )
+    table.append([df.columns[i], 'Categorical Predictor', 'Categorical Response', t_value, p_value])
     return
 
 
 def cont_response_cat_pred(df, i, response, predictors, table):
-    print("Called: cont_response_cat_pred")
+    print('Called: cont_response_cat_pred')
     n = len(df)
-    fig = px.violin(
-        df, y=df.columns[-1], x=df.columns[i], box=True, hover_data=df.columns
-    )
+    fig = px.violin(df, y=df.columns[-1], x=df.columns[i], box=True, hover_data=df.columns)
     fig.show()
-    table.append(
-        [df.columns[i], "Categorical Predictor", "Continuous Response", np.nan, np.nan]
-    )
+    table.append([df.columns[i], 'Categorical Predictor', 'Continuous Response', np.nan, np.nan])
     return
 
 
 def random_forest():
-    import time
-
-    import numpy as np
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.inspection import permutation_importance
-    from sklearn.model_selection import train_test_split
-
-    # diabetes = datasets.load_diabetes(as_frame=True)
-    # df = diabetes['frame']
     X = df.iloc[:, :-1].values
     y = df.iloc[:, -1].values
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     forest = RandomForestRegressor(random_state=0)
     forest.fit(X_train, y_train)
 
@@ -269,9 +238,7 @@ def random_forest():
     elapsed_time = time.time() - start_time
     print(f"Elapsed time to compute the importances: {elapsed_time:.3f} seconds")
 
-    forest_importances_permutation = pd.Series(
-        result.importances_mean, index=df.iloc[:, :-1].columns
-    )
+    forest_importances_permutation = pd.Series(result.importances_mean, index=df.iloc[:, :-1].columns)
     fig, ax = plt.subplots()
     forest_importances_permutation.plot.bar(yerr=result.importances_std, ax=ax)
     ax.set_title("Feature importances using permutation on full model")
@@ -279,44 +246,50 @@ def random_forest():
     fig.tight_layout()
     plt.show()
     # print(result.importances_mean)
-    return result.importances_mean
+    return (result.importances_mean)
     # print(forest_importances_permutation.to_frame().rename(columns = {0:'Feature Importance'}).sort_values('Feature Importance',ascending=False))
+
+
+def mean_of_response(df):
+    pop_mean = np.mean(df.iloc[:, -1])
+    for j in range(0, len(df.columns) - 1):
+        count, bins = np.histogram(df.iloc[:, j])
+        weighted_mean_diff = [0 for i in range(len(bins))]
+        unweighted_mean_diff = [0 for i in range(len(bins))]
+        pop_mean = np.mean(df.iloc[:, -1])
+
+        for i in range(len(bins) - 1):
+            bin_data = df[(bins[i + 1] >= df.iloc[:, j]) & (bins[i] < df.iloc[:, j])]
+            weighted_mean_diff[i] = np.square(count[i] * (np.mean(bin_data[df.columns[j]]) - pop_mean))
+            # unweighted mean or response
+            unweighted_mean_diff[i] = np.square((np.mean(bin_data[df.columns[j]]) - pop_mean))
+
+    return (weighted_mean_diff, unweighted_mean_diff)
 
 
 if __name__ == "__main__":
 
-    """
-    #Diabetes
+    '''
+    #Diabetes  
     diabetes = datasets.load_diabetes(as_frame=True)
     df = diabetes['frame']
     predictors = ['age','sex','bmi','bp','s1','s2','s3','s4','s5','s6']
     response = ['target']
 
 
-    #Salary
+    #Salary 
     df = pd.read_csv('salary.csv')
     df.head()
     predictors = ['Age','Sex','Location','Experience']
     response = ['Salary']
-    """
+    '''
 
     # Heart
-    df = pd.read_csv("heart.csv")
+    df = pd.read_csv('heart.csv')
     df.head()
-    predictors = [
-        "Age",
-        "Sex",
-        "ChestPainType",
-        "RestingBP",
-        "Cholesterol",
-        "FastingBS",
-        "RestingECG",
-        "MaxHR",
-        "ExerciseAngina",
-        "Oldpeak",
-        "ST_Slope",
-    ]
-    response = ["HeartDisease"]
+    predictors = ['Age', 'Sex', 'ChestPainType', 'RestingBP', 'Cholesterol', 'FastingBS', 'RestingECG', 'MaxHR',
+                  'ExerciseAngina', 'Oldpeak', 'ST_Slope']
+    response = ['HeartDisease']
     # df[response] = df[response].astype('object')
 
     result_response = check_response(df, response)
@@ -329,23 +302,24 @@ if __name__ == "__main__":
         if result_response == "CAT_RES":
             df[response] = df[response].astype(str)
             if result_predictor == "CAT_PRED":
-                df.iloc[:, i] = df.iloc[:, i].astype("category").cat.codes
+                df.iloc[:, i] = df.iloc[:, i].astype('category').cat.codes
                 cat_response_cat_predictor(df, i, response, predictors, table)
             else:
                 cat_response_cont_predictor(df, i, response, predictors, table)
         else:
             if result_predictor == "CAT_PRED":
-                df.iloc[:, i] = df.iloc[:, i].astype("category").cat.codes
+                df.iloc[:, i] = df.iloc[:, i].astype('category').cat.codes
                 cont_response_cat_pred(df, i, response, predictors, table)
             else:
                 cont_response_cont_predictor(df, i, response, predictors, table)
     # print(table)
-    col = ["Predictor Name", "Predictor Type", "Response Type", "T score", "P Score"]
+    col = ['Predictor Name', 'Predictor Type', 'Response Type', 'T score', 'P Score']
     table_df = pd.DataFrame(table, columns=col)
     importance_table = random_forest()
-    table_df["Importance"] = importance_table
-    final_table = table_df.sort_values(by="Importance", axis=0, ascending=False)
+    table_df['Importance'] = importance_table
+    weighted_mean_diff, unweighted_mean_diff = mean_of_response(df)
+    table_df['Weighted Mean of Response'] = weighted_mean_diff
+    table_df['Unweighted Mean of Response'] = unweighted_mean_diff
+    final_table = table_df.sort_values(by='Importance', axis=0, ascending=False)
     print(final_table)
-
-    # variable_type(df,predictors,response)
-    # lr(df,predictors,response)
+    final_table.to_html('final_table.html')
