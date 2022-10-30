@@ -109,6 +109,7 @@ def cat_response_cont_predictor(df, i, response, predictors, table):
     for j in range(0, len(group_labels)):
         hist_data.append(df[df[response[0]] == group_labels[j]].iloc[:, i].values)
 
+    print(hist_data)
     n = len(df)
     # Create distribution plot with custom bin_size
     fig_1 = ff.create_distplot(hist_data, group_labels, bin_size=0.2)
@@ -139,7 +140,7 @@ def cat_response_cont_predictor(df, i, response, predictors, table):
     x = df.iloc[:, i]
     y = df.iloc[:, -1].astype("category").cat.codes
     y = y.astype("int64")
-
+    print(x)
     predictor = statsmodels.api.add_constant(df.iloc[:, i].T.values)
     log_regression_model = statsmodels.api.Logit(y, predictor)
     log_regression_model_fitted = log_regression_model.fit()
@@ -165,6 +166,7 @@ def cat_response_cont_predictor(df, i, response, predictors, table):
 def cat_response_cat_predictor(df, i, response, predictors, table):
     print("Called: cat_response_cat_predictor")
     n = len(df)
+    print(n)
     df[response] = df[response].astype("int64")
     x = df.iloc[:, i]
     y = df.iloc[:, -1]
@@ -223,6 +225,7 @@ def cat_response_cat_predictor(df, i, response, predictors, table):
 def cont_response_cat_pred(df, i, response, predictors, table):
     print("Called: cont_response_cat_pred")
     n = len(df)
+    print(n)
     fig = px.violin(
         df, y=df.columns[-1], x=df.columns[i], box=True, hover_data=df.columns
     )
@@ -274,7 +277,6 @@ def random_forest():
     plt.show()
     # print(result.importances_mean)
     return result.importances_mean
-    # print(forest_importances_permutation.to_frame().rename(columns = {0:'Feature Importance'}).sort_values('Feature Importance',ascending=False))
 
 
 def mean_of_response(df):
@@ -345,13 +347,13 @@ if __name__ == "__main__":
             df[response] = df[response].astype(str)
             if result_predictor == "CAT_PRED":
                 df.iloc[:, i] = df.iloc[:, i].astype("category").cat.codes
-                cat_response_cat_predictor(df, i, response, predictors, table)
+                # cat_response_cat_predictor(df, i, response, predictors, table)
             else:
                 cat_response_cont_predictor(df, i, response, predictors, table)
         else:
             if result_predictor == "CAT_PRED":
                 df.iloc[:, i] = df.iloc[:, i].astype("category").cat.codes
-                cont_response_cat_pred(df, i, response, predictors, table)
+                # cont_response_cat_pred(df, i, response, predictors, table)
             else:
                 cont_response_cont_predictor(df, i, response, predictors, table)
     # print(table)
