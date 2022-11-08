@@ -89,7 +89,7 @@ def rolling_average_calculation(spark, data):
     JOIN rolling_average_intermediate as b \
     ON a.batter = b.batter \
     AND a.local_date > b.local_date \
-    AND b.local_date BETWEEN a.local_date - INTERVAL 100 DAY and a.local_date \
+    AND b.local_date BETWEEN a.local_date - INTE RVAL 100 DAY and a.local_date \
     group by a.batter,a.local_date \
     order by a.local_date DESC """
 
