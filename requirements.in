@@ -6,3 +6,8 @@ sklearn
 pyspark
 pyspark-stubs
 findspark
+matplotlib
+statsmodels
+seaborn
+dython
+association_metrics
