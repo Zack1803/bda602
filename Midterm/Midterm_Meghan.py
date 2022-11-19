@@ -9,6 +9,8 @@ from cat_correlation import cat_cont_correlation_ratio, cat_correlation
 from plotly import figure_factory as ff
 from plotly import graph_objects as go
 
+# from sklearn import datasets
+
 # , product
 
 
@@ -303,7 +305,7 @@ def mean_of_response_cont_cont(X, continuous, response):
     Unweighted_Mean_of_Response = []
     Weighted_Mean_of_Response = []
     urls = []
-    bin_size = 20
+    bin_size = 10
     bin_size_2d = bin_size * bin_size
     for i in range(0, len(continuous)):
         for j in range(0, len(continuous)):
@@ -314,18 +316,22 @@ def mean_of_response_cont_cont(X, continuous, response):
                 population_mean = X[response].mean()
                 population_count = X[response].count()
                 bins = {}
-                bins["cont1_bins"] = pd.cut(X[continuous[i]], bin_size)
-                bins["cont2_bins"] = pd.cut(X[continuous[j]], bin_size)
+                bins["cont1_bins"] = pd.cut(
+                    X[continuous[i]], bin_size, include_lowest=True, duplicates="drop"
+                )
+                bins["cont2_bins"] = pd.cut(
+                    X[continuous[j]], bin_size, include_lowest=True, duplicates="drop"
+                )
                 bins_df = pd.DataFrame(bins)
                 bin_columns = bins_df.columns.to_list()
                 # print(bins_df)
                 filtered_df = X.filter([continuous[i], continuous[j], response], axis=1)
                 joined_bin = filtered_df.join(bins_df)
-                # print(bin_joined_df)
+                print(joined_bin)
 
                 grouped_bin = joined_bin.groupby(bin_columns)
                 bin_mean = grouped_bin.mean().unstack()
-                # print(bin_mean)
+                print(bin_mean.columns)
 
                 counts = grouped_bin.count().unstack()
                 response_count = counts[response]
@@ -340,10 +346,10 @@ def mean_of_response_cont_cont(X, continuous, response):
 
                 diff_mean_unweighted = (
                     res_means_diff_df.pow(2).sum().sum() / bin_size_2d
-                ) ** 0.5
+                )
                 diff_mean_weighted = (
                     res_means_diff_weighted_df.pow(2).sum().sum() / bin_size_2d
-                ) ** 0.5
+                )
                 Unweighted_Mean_of_Response.append(diff_mean_unweighted)
                 Weighted_Mean_of_Response.append(diff_mean_weighted)
 
@@ -486,6 +492,7 @@ def mean_of_response_cat_cat(X, categorical, response):
 
 
 def main():
+
     dataset_name = "Heart.csv"
     predictors = [
         "Age",
@@ -501,7 +508,17 @@ def main():
         "ST_Slope",
     ]
     response = "HeartDisease"
-
+    """
+    diabetes = datasets.load_diabetes(as_frame=True)
+    data = diabetes['frame']
+    predictors = ['age', 'sex', 'bmi', 'bp', 's1', 's2', 's3', 's4', 's5', 's6']
+    response = 'target'
+    iris = datasets.load_iris()
+    data = pd.DataFrame(data=np.c_[iris['data'], iris['target']], columns=iris['feature_names'] + ['target'])
+    predictos = iris['fest']
+    X = data[predictors]
+    y = data[response]
+    """
     # Get Data Based on dataset name, predictors and response
     data, X, y = get_data(dataset_name, predictors, response)
 
@@ -513,15 +530,16 @@ def main():
     # print(X.head())
 
     # Compute the correlation metrics for predictors
-    correlation_metrics_cont_cont(X, predictors, continuous)
-    correlation_metrics_cat_cat(X, predictors, categorical)
-    correlation_metrics_cat_cont(X, predictors, continuous, categorical)
+    # correlation_metrics_cont_cont(X, predictors, continuous)
+    # correlation_metrics_cat_cat(X, predictors, categorical)
+    # correlation_metrics_cat_cont(X, predictors, continuous, categorical)
     # print(data.dtypes)
     # Mean of Response
     # evaluate_data(data,continuous,categorical,response)
-
+    print(continuous)
+    print(data.columns)
     mean_of_response_cont_cont(data, continuous, response)
-    mean_of_response_cat_cat(data, categorical, response)
+    # mean_of_response_cat_cat(data, categorical, response)
     # mean_of_response_cat_cont(data, categorical, continuous,response)
     # print(X.dtypes)
 
