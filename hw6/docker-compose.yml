@@ -1,0 +1,30 @@
+version: "2.1"
+services:
+  mariadb:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MYSQL_ROOT_PASSWORD=ROOT_ACCESS_PASSWORD
+      - TZ=Europe/London
+      - MYSQL_DATABASE=USER_DB_NAME #optional
+      - MYSQL_USER=MYSQL_USER #optional
+      - MYSQL_PASSWORD=DATABASE_PASSWORD #optional
+    volumes:
+      - ${PWD}/mariadb:/var/lib/mysql
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+  SQL:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: baseball
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+    restart: unless-stopped
+    volumes:
+      - "Users/zack/Documents/SDSU/Fall 2022/BDA 602/baseball.sql"
