@@ -1,0 +1,28 @@
+version: "2.1"
+services:
+  mariadb:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MYSQL_ROOT_PASSWORD=believe
+      - TZ=Europe/London
+      - MYSQL_USER=root #optional
+      - MYSQL_PASSWORD=believe #optional
+    volumes:
+      - .db:/config
+    ports:
+      - 80:80
+
+  ba_sql:
+    container_name: ba_sql
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5001:8080"
+    environment:
+      PORT: "8080"
+    volumes:
+      - ./results:/results
