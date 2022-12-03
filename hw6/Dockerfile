@@ -1,6 +1,5 @@
 FROM ubuntu
 
-CMD ["echo","$PWD"]
 RUN mkdir /scripts
 RUN mkdir /results
 

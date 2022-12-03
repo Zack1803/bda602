@@ -1,11 +1,16 @@
-if ! mysql -h mariadb -u root -p believe -e "USE baseball"; then
-  echo "Baseball Dataset Does Not Exist"
-  mariadb -u root -p believe -e "CREATE DATABASE IF NOT EXISTS baseball;"
-  mariadb -u root -p believe baseball < baseball.sql
+#!/bin/bash
+sleep 10
+if ! mysql -h mariadb -u root -e "USE baseball"; then
+    echo "Baseball Dataset Does Not Exist"
+    mysql -h mariadb -u root -e "CREATE DATABASE IF NOT EXISTS baseball;"
+    mysql -h mariadb -u root baseball < /scripts/baseball.sql
 else
-  echo "Baseball Dataset Exists"
+    echo "Baseball Dataset Exists"
+    mysql -h mariadb -u root -e "CREATE OR REPLACE DATABASE baseball;"
+    mysql -h mariadb -u root baseball < /scripts/baseball.sql
+
 fi
 
-echo "Intializing HW6"
-mariadb -u root -p believe baseball < cmd.sql
-mariadb -u root -p believe baseball -e 'SELECT * FROM rolling_average where game_id=12560;' > /results/batting_avg.txt
+echo "Initializing HW6"
+mysql -h mariadb -u root baseball < /scripts/cmd.sql
+mysql -h mariadb -u root baseball -e 'SELECT * FROM rolling_average where game_id=12560;' > /results/batting_avg.txt
