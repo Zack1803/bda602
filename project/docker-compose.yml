@@ -1,0 +1,25 @@
+version: "2.1"
+services:
+  mariadb:
+    image: linuxserver/mariadb:latest
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MYSQL_ALLOW_EMPTY_PASSWORD="true"
+    volumes:
+      - .db:/config
+    ports:
+      - 3308:3308
+
+  sql_py:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sql_py
+    volumes:
+      - ./Cont-Cont-Plots :/app/Cont-Cont-plots
+      - ./Distribution-Plots :/app/Distribution-plots
+      - ./Mean_Of_Response_1D_Plots :/app/Mean_Of_Response_1D_plots
+      - ./Scatter-plots :/app/Scatter-plots
+      - ./Violin-plots :/app/Violin-plots
